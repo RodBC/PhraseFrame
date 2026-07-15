@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import patch
 
@@ -7,17 +6,21 @@ from fastapi.testclient import TestClient
 from phraseframe.main import app
 
 
-def client() -> Iterator[TestClient]:
-    with TestClient(app) as test_client:
-        yield test_client
-
-
 def test_home_page_contains_reader_and_science() -> None:
     with TestClient(app) as test_client:
         response = test_client.get("/")
     assert response.status_code == 200
     assert "Find your reading cadence" in response.text
     assert "THE EVIDENCE, WITHOUT THE HYPE" in response.text
+
+
+def test_reader_forces_and_fits_a_single_line() -> None:
+    with TestClient(app) as test_client:
+        styles = test_client.get("/static/styles.css").text
+        script = test_client.get("/static/app.js").text
+    assert "white-space: nowrap" in styles
+    assert "fitPhraseOnOneLine" in script
+    assert "requiredWidth > availableWidth" in script
 
 
 def test_timeline_endpoint_returns_shared_timing_contract() -> None:

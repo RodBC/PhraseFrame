@@ -132,13 +132,14 @@ select { color: var(--text); background: #0b1220; border: 1px solid var(--line);
 .focus-guides::before { top: 34px; }
 .focus-guides::after { bottom: 44px; }
 #phrase {
+  width: 100%;
   max-width: 100%;
   margin: 0;
   text-align: center;
   font-family: Georgia, serif;
   font-size: clamp(2rem, 4.6vw, 3.7rem);
-  line-height: 1.15;
-  text-wrap: balance;
+  line-height: 1;
+  white-space: nowrap;
 }
 .stage-footer { position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; justify-content: space-between; color: var(--muted); font: .7rem ui-monospace, monospace; }
 .progress-track { height: 4px; background: var(--line); margin: 17px 0; overflow: hidden; border-radius: 2px; }

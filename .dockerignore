@@ -1,0 +1,12 @@
+.cursor
+.venv
+__pycache__
+.coverage
+.mypy_cache
+.pytest_cache
+.ruff_cache
+tests
+docs
+*.pdf
+*.mp4
+.git

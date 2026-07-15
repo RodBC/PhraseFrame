@@ -27,25 +27,22 @@ class PillowMoviePyRenderer:
     def _image_for(self, frame: TimedFrame, total: int) -> NDArray[np.uint8]:
         image = Image.new("RGB", (self.width, self.height), "#0b1020")
         draw = ImageDraw.Draw(image)
-        font = self._font(72)
         label_font = self._font(24)
 
-        words = frame.text.split()
-        lines = [frame.text]
-        if len(frame.text) > 28 and len(words) > 1:
-            midpoint = max(1, len(words) // 2)
-            lines = [" ".join(words[:midpoint]), " ".join(words[midpoint:])]
-        phrase = "\n".join(lines)
-        bounds = draw.multiline_textbbox((0, 0), phrase, font=font, spacing=18, align="center")
+        font_size = 72
+        font = self._font(font_size)
+        bounds = draw.textbbox((0, 0), frame.text, font=font)
+        while bounds[2] - bounds[0] > self.width - 160 and font_size > 24:
+            font_size -= 2
+            font = self._font(font_size)
+            bounds = draw.textbbox((0, 0), frame.text, font=font)
         text_width = bounds[2] - bounds[0]
         text_height = bounds[3] - bounds[1]
-        draw.multiline_text(
+        draw.text(
             ((self.width - text_width) / 2, (self.height - text_height) / 2 - 20),
-            phrase,
+            frame.text,
             font=font,
             fill="#f8fafc",
-            spacing=18,
-            align="center",
         )
 
         progress = (frame.index + 1) / max(total, 1)

@@ -91,11 +91,23 @@ function stop() {
   elements.play.textContent = "▶";
 }
 
+function fitPhraseOnOneLine() {
+  elements.phrase.style.removeProperty("font-size");
+  const preferredSize = Number.parseFloat(getComputedStyle(elements.phrase).fontSize);
+  const availableWidth = elements.phrase.clientWidth;
+  const requiredWidth = elements.phrase.scrollWidth;
+  if (requiredWidth > availableWidth) {
+    const fittedSize = Math.max(12, Math.floor(preferredSize * availableWidth / requiredWidth));
+    elements.phrase.style.fontSize = `${fittedSize}px`;
+  }
+}
+
 function showFrame() {
   const timeline = state.timeline;
   if (!timeline?.frames.length) return;
   const frame = timeline.frames[state.index];
   elements.phrase.textContent = frame.text;
+  fitPhraseOnOneLine();
   elements.frameCounter.textContent = `${state.index + 1} / ${timeline.frames.length}`;
   elements.timeCounter.textContent = `${formatTime(frame.starts_at_ms)} / ${formatTime(timeline.duration_ms)}`;
   elements.progress.style.width = `${((state.index + 1) / timeline.frames.length) * 100}%`;
@@ -216,6 +228,8 @@ elements.restart.addEventListener("click", () => {
 });
 elements.export.addEventListener("click", exportVideo);
 elements.fullscreen.addEventListener("click", () => elements.stage.requestFullscreen());
+window.addEventListener("resize", fitPhraseOnOneLine);
+document.addEventListener("fullscreenchange", () => requestAnimationFrame(fitPhraseOnOneLine));
 elements.reflection.addEventListener("click", (event) => {
   const adjustment = Number(event.target.dataset.adjust);
   if (Number.isNaN(adjustment)) return;
