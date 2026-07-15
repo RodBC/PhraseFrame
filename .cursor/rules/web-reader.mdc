@@ -1,0 +1,14 @@
+---
+description: Maintain accessible and deterministic reader UI behavior
+globs: src/phraseframe/web/**/*
+alwaysApply: false
+---
+
+# Reader UI
+
+- Browser playback must consume server-generated frame durations.
+- Preserve keyboard, focus-visible, reduced-motion, and narrow-screen behavior.
+- Keep source errors and export state available to assistive technology.
+- Avoid remote fonts, trackers, CDNs, or document-content analytics.
+- Warn rather than celebrate when pace exceeds 350 WPM.
+- Keep JavaScript modules small and dependency-free until complexity justifies a build system.

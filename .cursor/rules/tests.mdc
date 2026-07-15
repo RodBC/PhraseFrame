@@ -1,0 +1,13 @@
+---
+description: Test PhraseFrame behavior at domain and boundary levels
+globs: tests/**/*.py
+alwaysApply: false
+---
+
+# Tests
+
+- Prefer focused unit tests for chunking and timing edge cases.
+- Test adapters with original, minimal fixtures.
+- Assert HTTP status and stable payload fields, not implementation details.
+- Keep one real short MP4 smoke test and avoid long rendering fixtures.
+- Cover Unicode, empty input, invalid settings, and temporary-file cleanup.

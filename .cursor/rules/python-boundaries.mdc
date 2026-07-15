@@ -1,0 +1,14 @@
+---
+description: Preserve PhraseFrame Python architecture and privacy boundaries
+globs: src/**/*.py
+alwaysApply: false
+---
+
+# Python boundaries
+
+- `core` is pure, typed, deterministic, and unaware of FastAPI or media libraries.
+- `services` orchestrate use cases; `adapters` handle formats and external tools.
+- Routes validate and translate HTTP only.
+- Use immutable domain models and dependency direction toward `core`.
+- Never log or persist source document text.
+- Add tests with every behavior change.

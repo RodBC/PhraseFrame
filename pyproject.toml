@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "phraseframe"
+version = "0.1.0"
+description = "Local-first phrase-paced reading and video export"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.139.0",
+    "imageio-ffmpeg==0.6.0",
+    "jinja2==3.1.6",
+    "moviepy==2.2.1",
+    "numpy==2.5.1",
+    "pillow==11.3.0",
+    "pydantic==2.13.4",
+    "python-multipart==0.0.32",
+    "uvicorn==0.51.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx==0.28.1",
+    "mypy==2.3.0",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.15.21",
+]
+
+[project.scripts]
+phraseframe = "phraseframe.main:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phraseframe"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=phraseframe --cov-report=term-missing --cov-fail-under=85"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["moviepy", "moviepy.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true

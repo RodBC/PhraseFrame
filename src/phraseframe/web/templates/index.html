@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Phrase-paced reading with honest, comprehension-first controls.">
+  <title>PhraseFrame — Find your reading cadence</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  <script type="module" src="{{ url_for('static', path='/app.js') }}"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="PhraseFrame home">
+      <span class="brand-mark">PF</span>
+      <span>PhraseFrame</span>
+    </a>
+    <span class="privacy-note">Local-first · your text stays on this device</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">READ AT THE SPEED OF ATTENTION</p>
+      <h1>Find your reading cadence.</h1>
+      <p>Short, meaningful phrases arrive at one focal point. You control the pace—and can always go back.</p>
+    </section>
+
+    <section class="workspace" aria-label="PhraseFrame reader">
+      <aside class="source-panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">01</span>
+            <h2>Source</h2>
+          </div>
+          <label class="file-button">
+            Upload .txt
+            <input id="file-input" type="file" accept=".txt,text/plain">
+          </label>
+        </div>
+        <label for="source-text">Paste or edit your text</label>
+        <textarea id="source-text" spellcheck="true">Attention is a limited resource. A crowded page asks your eyes to choose where to land, while PhraseFrame offers one short idea at a time.
+
+This does not make comprehension limitless. Difficult arguments still need thought, pauses, and sometimes a second look. That is why this reader lets you move backward, slow down, and tune the phrase size.
+
+Begin at a comfortable pace. Notice whether each phrase connects naturally to the next. If meaning starts to blur, lower the speed. The best pace is not the largest number; it is the fastest pace at which you can still explain what you read.</textarea>
+        <div class="source-meta">
+          <span id="word-count">0 words</span>
+          <span id="duration-estimate">—</span>
+        </div>
+        <p id="source-error" class="error" role="alert" hidden></p>
+
+        <div class="settings">
+          <div class="range-label">
+            <label for="wpm">Pace</label>
+            <output id="wpm-output" for="wpm">300 WPM</output>
+          </div>
+          <input id="wpm" type="range" min="200" max="500" step="10" value="300">
+          <div class="range-scale"><span>Reflective</span><span>Fast</span></div>
+          <p id="speed-guidance" class="guidance">A balanced starting point for clear prose.</p>
+
+          <div class="setting-row">
+            <label for="chunk-size">Phrase size</label>
+            <select id="chunk-size">
+              <option value="3">Compact · 3 words</option>
+              <option value="4" selected>Balanced · 4 words</option>
+              <option value="5">Wide · 5 words</option>
+            </select>
+          </div>
+          <label class="check-row">
+            <input id="preview-minute" type="checkbox">
+            Limit playback and export to the first 60 seconds
+          </label>
+          <button id="prepare-button" class="primary-button" type="button">Prepare reader</button>
+        </div>
+      </aside>
+
+      <section class="reader-panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">02</span>
+            <h2>Focus</h2>
+          </div>
+          <button id="fullscreen-button" class="icon-button" type="button" title="Fullscreen reader" aria-label="Fullscreen reader">↗</button>
+        </div>
+
+        <div id="reader-stage" class="reader-stage" tabindex="0" aria-label="Phrase reader">
+          <div class="focus-guides" aria-hidden="true"></div>
+          <p id="phrase" aria-live="polite">Prepare the reader to begin</p>
+          <div class="stage-footer">
+            <span id="frame-counter">0 / 0</span>
+            <span id="time-counter">0:00 / 0:00</span>
+          </div>
+        </div>
+
+        <div class="progress-track" aria-label="Reading progress">
+          <div id="progress-bar"></div>
+        </div>
+        <div class="transport">
+          <button id="restart-button" type="button" aria-label="Restart">↺</button>
+          <button id="previous-button" type="button" aria-label="Previous phrase">←</button>
+          <button id="play-button" class="play-button" type="button" aria-label="Play or pause">▶</button>
+          <button id="next-button" type="button" aria-label="Next phrase">→</button>
+          <button id="export-button" type="button" aria-label="Export MP4">MP4</button>
+        </div>
+        <p class="shortcut-note"><kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> move by phrase</p>
+        <p id="export-status" class="status" role="status"></p>
+
+        <div id="reflection" class="reflection" hidden>
+          <strong>Quick comprehension check</strong>
+          <p>Could you explain the passage in one sentence without looking back?</p>
+          <div>
+            <button type="button" data-adjust="-30">Not yet — slow down</button>
+            <button type="button" data-adjust="0">Yes — keep this pace</button>
+            <button type="button" data-adjust="20">Easily — try faster</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="science">
+      <div>
+        <p class="eyebrow">THE EVIDENCE, WITHOUT THE HYPE</p>
+        <h2>Speed is useful only when meaning survives.</h2>
+      </div>
+      <div class="science-grid">
+        <article><span>01</span><h3>One focal point</h3><p>Phrase-RSVP reduces scanning and can make small displays feel calmer.</p></article>
+        <article><span>02</span><h3>Meaningful chunks</h3><p>Structured, short idea units outperform arbitrary segments in classic RSVP research.</p></article>
+        <article><span>03</span><h3>Your pace matters</h3><p>Studies commonly find a comprehension trade-off above roughly 350 WPM.</p></article>
+      </div>
+      <details>
+        <summary>What the research actually says</summary>
+        <p>RSVP removes natural eye movements, including previewing upcoming words and rereading confusing material. It can be useful for focus and controlled pacing, but it is not a shortcut around comprehension. For demanding texts, pause, step back, and use a lower pace.</p>
+        <p><a href="https://doi.org/10.1177/1529100615623267" target="_blank" rel="noreferrer">Rayner et al. (2016)</a> · <a href="https://doi.org/10.1177/0956797614531794" target="_blank" rel="noreferrer">Schotter et al. (2014)</a> · <a href="https://doi.org/10.3758/BF03198304" target="_blank" rel="noreferrer">Juola et al. (1995)</a></p>
+      </details>
+    </section>
+  </main>
+
+  <footer>PhraseFrame POC · comprehension before speed</footer>
+</body>
+</html>
