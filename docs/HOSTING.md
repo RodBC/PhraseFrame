@@ -25,7 +25,7 @@ Use **Render Starter** (or equivalent) with a mounted volume.
 | Variable | Required | Purpose |
 |---|---|---|
 | `PHRASEFRAME_DATA_DIR` | Yes | `/data` — SQLite DB + uploaded PDFs |
-| `PHRASEFRAME_SECRET_KEY` | Yes | JWT signing (long random string) |
+| `PHRASEFRAME_SECRET_KEY` | Recommended | JWT signing. If omitted, the app writes `/data/.secret_key` on first boot. |
 | `PORT` | Auto | Set by Render |
 
 Checkpoint questions use **template generation only** — no LLM API key is required.

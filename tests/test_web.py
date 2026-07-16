@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -388,13 +389,31 @@ def test_invalid_settings_return_validation_error() -> None:
     assert "Chunk sizes" in response.json()["detail"]
 
 
-def test_production_startup_requires_secret(monkeypatch: MonkeyPatch) -> None:
-    from phraseframe.main import _validate_production_env
+def test_production_startup_provisions_secret(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from phraseframe.main import _configure_production_secret
 
+    monkeypatch.setenv("PHRASEFRAME_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("PORT", "8000")
     monkeypatch.delenv("PHRASEFRAME_SECRET_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="PHRASEFRAME_SECRET_KEY"):
-        _validate_production_env()
+    _configure_production_secret()
+    assert os.environ["PHRASEFRAME_SECRET_KEY"]
+    assert (tmp_path / ".secret_key").read_text().strip() == os.environ["PHRASEFRAME_SECRET_KEY"]
+
+    monkeypatch.delenv("PHRASEFRAME_SECRET_KEY", raising=False)
+    _configure_production_secret()
+    assert os.environ["PHRASEFRAME_SECRET_KEY"] == (tmp_path / ".secret_key").read_text().strip()
+
+
+def test_production_startup_respects_explicit_secret(monkeypatch: MonkeyPatch) -> None:
+    from phraseframe.main import _configure_production_secret
+
+    monkeypatch.setenv("PORT", "8000")
+    monkeypatch.setenv("PHRASEFRAME_SECRET_KEY", "render-dashboard-secret")
+    _configure_production_secret()
+    assert os.environ["PHRASEFRAME_SECRET_KEY"] == "render-dashboard-secret"
 
 
 def test_flashcard_review_reschedules_due_date(

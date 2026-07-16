@@ -1,6 +1,7 @@
 """PhraseFrame ASGI application."""
 
 import os
+import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -13,19 +14,35 @@ from phraseframe.db.store import LibraryStore
 from phraseframe.web.routes import router
 
 
-def _validate_production_env() -> None:
+def _is_production_runtime() -> bool:
     data_dir = os.environ.get("PHRASEFRAME_DATA_DIR", "data")
-    is_production = data_dir.startswith("/data") or bool(os.environ.get("PORT"))
-    secret = os.environ.get("PHRASEFRAME_SECRET_KEY", "")
-    if is_production and not secret:
-        raise RuntimeError(
-            "PHRASEFRAME_SECRET_KEY must be set when running outside local development."
-        )
+    return data_dir.startswith("/data") or bool(os.environ.get("PORT"))
+
+
+def _configure_production_secret() -> None:
+    """Use PHRASEFRAME_SECRET_KEY when set; otherwise persist one under the data dir."""
+    if not _is_production_runtime():
+        return
+
+    secret = os.environ.get("PHRASEFRAME_SECRET_KEY", "").strip()
+    if secret:
+        return
+
+    data_root = Path(os.environ.get("PHRASEFRAME_DATA_DIR", "data"))
+    secret_file = data_root / ".secret_key"
+    if secret_file.exists():
+        os.environ["PHRASEFRAME_SECRET_KEY"] = secret_file.read_text().strip()
+        return
+
+    secret = secrets.token_urlsafe(48)
+    data_root.mkdir(parents=True, exist_ok=True)
+    secret_file.write_text(secret)
+    os.environ["PHRASEFRAME_SECRET_KEY"] = secret
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    _validate_production_env()
+    _configure_production_secret()
     store = LibraryStore.from_env()
     store.init_schema()
     app.state.store = store
