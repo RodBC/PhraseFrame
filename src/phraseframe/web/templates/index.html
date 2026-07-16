@@ -14,7 +14,20 @@
       <span class="brand-mark">PF</span>
       <span>PhraseFrame</span>
     </a>
-    <span class="privacy-note">Local-first · your text stays on this device</span>
+    <span class="privacy-note">Sign in to save PDFs and resume on this server</span>
+    <div class="account-panel" id="account-panel">
+      <form id="auth-form" class="auth-form">
+        <input id="auth-email" type="email" autocomplete="username" placeholder="Email" aria-label="Email" required>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" aria-label="Password" minlength="8" required>
+        <button id="login-button" type="submit">Sign in</button>
+        <button id="register-button" type="button">Create account</button>
+      </form>
+      <p id="auth-error" class="auth-error" role="alert" hidden></p>
+      <div id="account-status" class="account-status" hidden>
+        <span id="account-email"></span>
+        <button id="logout-button" type="button">Sign out</button>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -32,9 +45,21 @@
             <h2>Source</h2>
           </div>
           <label class="file-button">
-            Upload .txt
-            <input id="file-input" type="file" accept=".txt,text/plain">
+            Upload .txt or .pdf
+            <input id="file-input" type="file" accept=".txt,.pdf,text/plain,application/pdf">
           </label>
+        </div>
+        <p id="sign-in-banner" class="sign-in-banner">Sign in to save a PDF and resume later. Guest uploads work for this session only.</p>
+        <div id="chapter-row" class="setting-row" hidden>
+          <label for="chapter-select">Chapter</label>
+          <select id="chapter-select"></select>
+        </div>
+        <div id="library-panel" class="library-panel" hidden>
+          <div class="library-heading">
+            <strong>Your library</strong>
+            <button id="refresh-library-button" type="button">Refresh</button>
+          </div>
+          <ul id="library-list"></ul>
         </div>
         <label for="source-text">Paste or edit your text</label>
         <textarea id="source-text" spellcheck="true">Attention is a limited resource. A crowded page asks your eyes to choose where to land, while PhraseFrame offers one short idea at a time.
@@ -69,7 +94,17 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
             <input id="preview-minute" type="checkbox">
             Limit playback and export to the first 60 seconds
           </label>
+          <label class="check-row">
+            <input id="stop-checkpoints" type="checkbox" checked>
+            Pause for comprehension checkpoints
+          </label>
+          <div class="setting-row">
+            <label for="stop-every-words">Checkpoint every</label>
+            <input id="stop-every-words" type="number" min="50" max="5000" step="50" value="800">
+            <span>words</span>
+          </div>
           <button id="prepare-button" class="primary-button" type="button">Prepare reader</button>
+          <button id="resume-button" class="secondary-button" type="button" hidden>Continue where I left off</button>
         </div>
       </aside>
 
@@ -114,6 +149,13 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
             <button type="button" data-adjust="0">Yes — keep this pace</button>
             <button type="button" data-adjust="20">Easily — try faster</button>
           </div>
+        </div>
+
+        <div id="checkpoint" class="checkpoint" hidden>
+          <strong>Comprehension checkpoint</strong>
+          <p>Answer briefly from memory before continuing.</p>
+          <div id="checkpoint-questions"></div>
+          <button id="checkpoint-continue" type="button">Continue reading</button>
         </div>
       </section>
     </section>

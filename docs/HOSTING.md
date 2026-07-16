@@ -1,44 +1,66 @@
-# Free POC hosting
+# Hosting PhraseFrame v2+
 
-## Current production (v1)
+## Production requirements
 
-PhraseFrame v1 is hosted on **Render** as a Free Web Service, deployed from
-`git@github.com:RodBC/PhraseFrame.git` using the root `Dockerfile`.
+v2 (PDF library, accounts, resume) and v3 (checkpoints) need **persistent storage**.
+Render **Free** tier does not provide a persistent disk — data is lost on redeploy or sleep.
+
+Use **Render Starter** (or equivalent) with a mounted volume.
+
+## Render Starter setup
 
 | Setting | Value |
 |---|---|
 | Runtime | Docker |
 | Branch | `main` |
 | Port | `8000` (via `PORT` env) |
-| Instance | Free (512 MB RAM, 0.1 CPU) |
+| Instance | Starter (512 MB+ RAM) |
+| Disk | Mount at `/data` (≥ 1 GB) |
 
-Render sleeps after 15 idle minutes and can take about a minute to wake. That is acceptable for
-the current POC demo.
+### Environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `PHRASEFRAME_DATA_DIR` | Yes | `/data` — SQLite DB + uploaded PDFs |
+| `PHRASEFRAME_SECRET_KEY` | Yes | JWT signing (long random string) |
+| `PHRASEFRAME_LLM_API_KEY` | No | Optional LLM for checkpoint questions |
+| `PORT` | Auto | Set by Render |
+
+### Disk mount
+
+1. In Render dashboard → your Web Service → **Disks**.
+2. Add disk: mount path `/data`, size 1 GB (or more).
+3. Set `PHRASEFRAME_DATA_DIR=/data`.
+4. Redeploy.
+
+The `Dockerfile` declares `VOLUME ["/data"]` and creates `/data/documents` with correct permissions.
 
 ## How to redeploy
 
-1. Push changes to `main` on GitHub.
+1. Push changes to `main`.
 2. Render auto-deploys from the linked repository.
-3. Test: page load, reader playback, short MP4 export.
-
-## Alternatives tried or available
-
-- **Koyeb**: Docker + GitHub supported, but repo connection was problematic in practice.
-- **Render**: chosen for v1; straightforward GitHub + Dockerfile deploy.
-
-Free CPU is only 0.1 vCPU, so MP4 exports are much slower than local. Keep the 60-second limit
-enabled for public demos.
+3. Verify:
+   - Page load and sign-in
+   - PDF upload (metadata-only response should be fast)
+   - Read 20+ frames, refresh, **Continue** restores position
+   - Checkpoint pause when `stop_every_words` is enabled
 
 ## Privacy and production boundary
 
-“Local-first” applies only when users run PhraseFrame on their own computer. On a hosted version,
-text is sent to the host for processing even though it is not intentionally persisted. Before
-inviting customers:
+On a hosted deployment, uploaded PDFs and reading progress are stored on the server disk
+for signed-in users. Guest `/api/extract` still processes files in memory for the session only.
 
-- replace the local privacy label with an accurate hosted-processing notice;
+Before inviting customers:
+
+- keep the hosted-processing notice visible in the UI;
 - add request-size, concurrency, timeout, and rate limits;
-- avoid access logs containing source text or query data;
+- avoid access logs containing source text;
 - run a dependency and FFmpeg license review;
-- add a retention/privacy policy and abuse protections.
+- add a retention/privacy policy.
 
-Free tiers are suitable for demos, not reliable commercial service or long book exports.
+## Alternatives
+
+- **Fly.io / VPS**: mount a volume, same env vars.
+- **Local**: default `PHRASEFRAME_DATA_DIR=data` in project root.
+
+Free tiers remain suitable for v1 TXT demos only, not PDF libraries with accounts.

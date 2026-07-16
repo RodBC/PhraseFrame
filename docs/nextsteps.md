@@ -18,7 +18,7 @@ PhraseFrame não é só um “speed reader”. É uma ferramenta que:
 
 ---
 
-## O que já existe (v1)
+## O que já existe
 
 | Capacidade | Status |
 |---|---|
@@ -27,17 +27,40 @@ PhraseFrame não é só um “speed reader”. É uma ferramenta que:
 | Upload `.txt` / colar texto | ✅ |
 | Exportação MP4 | ✅ |
 | Base científica e UX de calibração | ✅ |
-| Hospedagem (Render + Docker) | ✅ |
-| Conta de usuário | ❌ |
-| PDF | ❌ |
-| Salvar progresso | ❌ |
-| Perguntas / resumos / flashcards | ❌ |
+| Hospedagem (Render + Docker) | ✅ v1 |
+| Conta de usuário | ✅ v2 |
+| PDF | ✅ v2 |
+| Salvar progresso / retomar leitura | ✅ v2 |
+| Stop points + checkpoints de compreensão | ✅ v3 (kickoff) |
+| Perguntas LLM avançadas / resumos / flashcards | ❌ v4 |
 
 ---
 
-## v2 — Ler PDF com conta e progresso
+## v2 — Ler PDF com conta e progresso ✅
+
+**Status:** concluída localmente (refatorada para payloads enxutos e um único endpoint de progresso).
 
 **Objetivo:** o usuário faz upload de um PDF, configura a velocidade e começa a ler de onde parou.
+
+### Entregue
+
+- Upload de PDF com metadados de capítulo (texto sob demanda por capítulo).
+- Conta email/senha + biblioteca pessoal.
+- `PUT /api/documents/{id}/progress` como único caminho de persistência.
+- `GET /api/documents/{id}/resume` restaura capítulo, frame, WPM e phrase size.
+- SQLite + armazenamento em disco (`PHRASEFRAME_DATA_DIR`).
+
+### Critério de sucesso
+
+Usuário sobe um PDF (ex.: *Think*), lê 10 minutos, fecha o app, volta no dia seguinte e continua no mesmo ponto.
+
+---
+
+## v3 — Compreensão ativa em stop points (kickoff) 🔄
+
+**Status:** MVP local — stop points automáticos + perguntas template nos checkpoints.
+
+**Objetivo:** ao fim de capítulo ou a cada N palavras, o app verifica o que o usuário entendeu.
 
 ### Funcionalidades
 
@@ -102,12 +125,17 @@ Ao atingir um stop point:
 - Sugestão de voltar N frases se a compreensão cair.
 - Ajuste opcional automático de WPM.
 
-### Entregáveis técnicos
+### Entregáveis técnicos (v3 kickoff — feito)
 
-- Motor de stop points no `core/timing` ou serviço dedicado.
-- Módulo `comprehension/` com geração de perguntas (LLM ou regras + LLM).
-- UI de checkpoint entre sessões de leitura.
-- Registro de desempenho por trecho.
+- `stop_every_words` em `ReadingSettings` + `stop_frames` na timeline.
+- `POST /api/documents/{id}/checkpoints` com perguntas template (LLM opcional via env).
+- UI de checkpoint na pausa automática.
+
+### Próximo na v3
+
+- Feedback imediato acerto/erro.
+- Ajuste automático de WPM após baixa compreensão.
+- Geração LLM real quando `PHRASEFRAME_LLM_API_KEY` estiver configurada.
 
 ### Critério de sucesso
 
@@ -195,8 +223,8 @@ flowchart TD
 | Versão | Foco | Prioridade |
 |---|---|---|
 | v1 | Provar leitura phrase-RSVP | ✅ Concluída |
-| v2 | PDF + persistência | Alta |
-| v3 | Compreensão ativa | Alta |
+| v2 | PDF + persistência | ✅ Concluída |
+| v3 | Compreensão ativa | 🔄 Em andamento |
 | v4 | Revisão e retenção | Média |
 | v5 | Produto comercial | Média |
 
@@ -260,12 +288,10 @@ Medir **retenção e compreensão**, não só velocidade:
 
 ---
 
-## Próxima ação imediata (v2 kickoff)
+## Próxima ação imediata
 
-1. Implementar `adapters/pdf.py` com PyMuPDF.
-2. Adicionar modelo de dados mínimo: `User`, `Document`, `ReadingProgress`.
-3. Escolher auth (Supabase Auth, Auth0, ou FastAPI + JWT simples).
-4. Tela de upload PDF com preview de capítulos.
-5. Botão “Continuar de onde parei”.
+1. Deploy v2/v3 no Render Starter com disco persistente (`PHRASEFRAME_DATA_DIR=/data`).
+2. Teste norte: upload PDF → ler → checkpoint → fechar → **Continue** no dia seguinte.
+3. v4: resumos + flashcards a partir de respostas fracas nos checkpoints.
 
-Ver também: [V1.md](V1.md) · [ROADMAP.md](ROADMAP.md) · [SCIENCE.md](SCIENCE.md)
+Ver também: [V1.md](V1.md) · [HOSTING.md](HOSTING.md) · [ROADMAP.md](ROADMAP.md) · [SCIENCE.md](SCIENCE.md)

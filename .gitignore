@@ -12,3 +12,4 @@ build/
 *.mp4
 *.pdf
 !tests/fixtures/*.pdf
+data/
