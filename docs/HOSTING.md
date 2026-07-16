@@ -1,26 +1,33 @@
 # Free POC hosting
 
-## Recommendation: Koyeb
+## Current production (v1)
 
-Koyeb's free web instance currently provides 512 MB RAM, 0.1 vCPU, and 2 GB ephemeral SSD. It
-accepts Docker services, sleeps after one hour without traffic, and typically wakes in a few
-seconds. That makes it a better POC fit than Render's roughly one-minute cold start.
+PhraseFrame v1 is hosted on **Render** as a Free Web Service, deployed from
+`git@github.com:RodBC/PhraseFrame.git` using the root `Dockerfile`.
 
-1. Put this project in a private GitHub repository. The PDF is excluded by `.gitignore` and must
-   never be pushed.
-2. In Koyeb, create a Web Service from that repository.
-3. Select `Dockerfile`, the Free instance, and either Washington, D.C. or Frankfurt.
-4. Set the exposed port to `8000`; the container also honors a platform-provided `PORT`.
-5. Deploy and test TXT upload, playback, and a short MP4.
+| Setting | Value |
+|---|---|
+| Runtime | Docker |
+| Branch | `main` |
+| Port | `8000` (via `PORT` env) |
+| Instance | Free (512 MB RAM, 0.1 CPU) |
 
-Free CPU is only 0.1 vCPU, so MP4 exports will be much slower than local exports. Keep the
-60-second limit enabled for public demos and expect only one practical render at a time.
+Render sleeps after 15 idle minutes and can take about a minute to wake. That is acceptable for
+the current POC demo.
 
-## Alternative: Render
+## How to redeploy
 
-Render can deploy the same Dockerfile as a free Web Service. Its free instance also has 512 MB
-RAM and 0.1 CPU, but it sleeps after 15 idle minutes and can take about a minute to wake. The
-ephemeral filesystem is fine because PhraseFrame deletes temporary outputs and stores no state.
+1. Push changes to `main` on GitHub.
+2. Render auto-deploys from the linked repository.
+3. Test: page load, reader playback, short MP4 export.
+
+## Alternatives tried or available
+
+- **Koyeb**: Docker + GitHub supported, but repo connection was problematic in practice.
+- **Render**: chosen for v1; straightforward GitHub + Dockerfile deploy.
+
+Free CPU is only 0.1 vCPU, so MP4 exports are much slower than local. Keep the 60-second limit
+enabled for public demos.
 
 ## Privacy and production boundary
 

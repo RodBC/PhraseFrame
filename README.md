@@ -37,6 +37,6 @@ binary is initialized.
 - Optional first-60-second preview and H.264 MP4 export.
 - No accounts, analytics, remote uploads, PDF, EPUB, or OCR yet.
 
-See [the architecture](docs/ARCHITECTURE.md), [research notes](docs/SCIENCE.md),
-[free-hosting guide](docs/HOSTING.md), and [roadmap](docs/ROADMAP.md).
+See [v1 status](docs/V1.md), [next steps](docs/nextsteps.md), [architecture](docs/ARCHITECTURE.md),
+[research notes](docs/SCIENCE.md), [hosting](docs/HOSTING.md), and [roadmap](docs/ROADMAP.md).
 # PhraseFrame

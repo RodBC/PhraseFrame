@@ -16,11 +16,14 @@ def test_home_page_contains_reader_and_science() -> None:
 
 def test_reader_forces_and_fits_a_single_line() -> None:
     with TestClient(app) as test_client:
+        page = test_client.get("/").text
         styles = test_client.get("/static/styles.css").text
         script = test_client.get("/static/app.js").text
-    assert "white-space: nowrap" in styles
+    assert "phrase-shell" in page
+    assert "overflow-x: clip" in styles
+    assert "minmax(0" in styles
     assert "fitPhraseOnOneLine" in script
-    assert "requiredWidth > availableWidth" in script
+    assert "phraseAvailableWidth" in script
 
 
 def test_timeline_endpoint_returns_shared_timing_contract() -> None:

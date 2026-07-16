@@ -11,6 +11,7 @@ const elements = {
   preview: document.querySelector("#preview-minute"),
   prepare: document.querySelector("#prepare-button"),
   stage: document.querySelector("#reader-stage"),
+  phraseShell: document.querySelector(".phrase-shell"),
   phrase: document.querySelector("#phrase"),
   frameCounter: document.querySelector("#frame-counter"),
   timeCounter: document.querySelector("#time-counter"),
@@ -91,14 +92,22 @@ function stop() {
   elements.play.textContent = "▶";
 }
 
+function phraseAvailableWidth() {
+  const shell = elements.phraseShell ?? elements.stage;
+  return Math.max(0, shell.clientWidth);
+}
+
 function fitPhraseOnOneLine() {
   elements.phrase.style.removeProperty("font-size");
-  const preferredSize = Number.parseFloat(getComputedStyle(elements.phrase).fontSize);
-  const availableWidth = elements.phrase.clientWidth;
-  const requiredWidth = elements.phrase.scrollWidth;
-  if (requiredWidth > availableWidth) {
-    const fittedSize = Math.max(12, Math.floor(preferredSize * availableWidth / requiredWidth));
-    elements.phrase.style.fontSize = `${fittedSize}px`;
+  const availableWidth = phraseAvailableWidth();
+  elements.phrase.style.maxWidth = `${availableWidth}px`;
+
+  let fontSize = Number.parseFloat(getComputedStyle(elements.phrase).fontSize);
+  const minimum = window.matchMedia("(max-width: 640px)").matches ? 11 : 12;
+
+  while (elements.phrase.scrollWidth > availableWidth && fontSize > minimum) {
+    fontSize -= 1;
+    elements.phrase.style.fontSize = `${fontSize}px`;
   }
 }
 
