@@ -31,8 +31,19 @@ PhraseFrame não é só um “speed reader”. É uma ferramenta que:
 | Conta de usuário | ✅ v2 |
 | PDF | ✅ v2 |
 | Salvar progresso / retomar leitura | ✅ v2 |
-| Stop points + checkpoints de compreensão | ✅ v3 (kickoff) |
-| Perguntas LLM avançadas / resumos / flashcards | ❌ v4 |
+| Stop points + checkpoints de compreensão | ✅ v3 |
+| Self-score + feedback + weak-passage flag | ✅ v3 |
+| Perguntas template variáveis (2–5) | ✅ v3 local |
+| Resumo extractivo + até 4 flashcards | ✅ v4 local |
+| Attention Loop + Recall Moment persistente | ✅ demo local |
+| Dashboard mínimo + SM-2 + tela Review cross-documento | ✅ v4 local |
+| Return to passage (card → frame de origem) | ✅ v4 local |
+| Perguntas/resumos por LLM + dashboard longitudinal completo | ❌ v4+ |
+
+O fluxo local agora fecha o ciclo completo: **Read → Check → Gaps → Cards → Review → Return to
+passage**. O Recall Moment mantém score, resumo, lacunas e ações na tela até uma decisão explícita;
+cards novos entram imediatamente na fila, sem duplicar quando o mesmo checkpoint é respondido de
+novo. O E2E no Render Starter continua pendente.
 
 ---
 
@@ -56,46 +67,29 @@ Usuário sobe um PDF (ex.: *Think*), lê 10 minutos, fecha o app, volta no dia s
 
 ---
 
-## v3 — Compreensão ativa em stop points (kickoff) 🔄
+## v3 — Compreensão ativa em stop points ✅
 
-**Status:** MVP local — stop points automáticos + perguntas template nos checkpoints.
+**Status:** concluída localmente — stop points, 2–5 perguntas template, self-score, feedback e flag de trecho fraco.
 
 **Objetivo:** ao fim de capítulo ou a cada N palavras, o app verifica o que o usuário entendeu.
 
-### Funcionalidades
+### Entregue
 
-1. **Upload de PDF**
-   - Extrair texto com PyMuPDF (ou equivalente com revisão de licença).
-   - Limpar cabeçalhos, rodapés, hifenização e números de página.
-   - Detectar capítulos ou permitir seleção manual de intervalo.
-
-2. **Configuração de leitura**
-   - WPM, tamanho de frase, pausas em pontuação.
-   - Modo “primeira passagem” vs “revisão”.
-
-3. **Conta de usuário**
-   - Login simples (email/senha ou OAuth).
-   - Biblioteca pessoal de documentos.
-
-4. **Persistência de progresso**
-   - Salvar o PDF (ou referência segura ao arquivo).
-   - Salvar frame/posição atual, WPM e configurações.
-   - Retomar exatamente de onde parou em qualquer sessão.
-
-### Entregáveis técnicos
-
-- `DocumentExtractor` para PDF.
-- Banco de dados (usuários, documentos, sessões de leitura).
-- Storage para PDFs (S3/compatível ou disco persistente no host).
-- API: `POST /documents`, `GET /documents/{id}/resume`.
+- `stop_every_words` em `ReadingSettings` + `stop_frames` na timeline.
+- `stop_every_words` persistido em `reading_progress` (restaurado no Continue).
+- `POST /api/documents/{id}/checkpoints` — snippet gerado no servidor a partir do capítulo em cache.
+- Self-score (Sure / Unsure / No idea) + feedback imediato + ajuste sugerido de WPM.
+- `GET /api/documents/{id}/checkpoints` — histórico de scores por frame.
+- `comprehension_rate` na biblioteca (média de scores).
+- Geração variável de 2–5 perguntas template conforme o tamanho do trecho.
 
 ### Critério de sucesso
 
-Usuário sobe um PDF (ex.: *Think*), lê 10 minutos, fecha o app, volta no dia seguinte e continua no mesmo ponto.
+Ao ler um capítulo, o usuário responde perguntas, vê feedback, e trechos fracos aparecem no painel **Weak stops** ao retomar (com atalho “Jump to frame”).
 
 ---
 
-## v3 — Compreensão ativa em stop points
+## v3 — detalhes de produto (referência)
 
 **Objetivo:** ao fim de capítulo ou em pontos arbitrários, o app verifica o que o usuário entendeu.
 
@@ -105,7 +99,7 @@ Pontos de parada configuráveis:
 
 - fim de capítulo (automático);
 - a cada **X palavras** (ex.: 500, 1000);
-- fim de seção detectada no PDF;
+- fim de seção detectada no PDF — **não implementado** (stop manual + a cada N palavras);
 - parada manual do usuário.
 
 ### Perguntas de compreensão
@@ -121,29 +115,27 @@ Ao atingir um stop point:
 
 ### Feedback imediato
 
-- Acerto/erro com explicação curta.
+- Self-score (Sure / Unsure / No idea) com feedback imediato — **sem** grading certo/errado automático.
 - Sugestão de voltar N frases se a compreensão cair.
-- Ajuste opcional automático de WPM.
+- Ajuste sugerido de WPM via feedback — **sem** ajuste automático silencioso.
 
-### Entregáveis técnicos (v3 kickoff — feito)
+### Entregáveis técnicos (referência histórica)
 
-- `stop_every_words` em `ReadingSettings` + `stop_frames` na timeline.
-- `POST /api/documents/{id}/checkpoints` com perguntas template (LLM opcional via env).
-- UI de checkpoint na pausa automática.
+- Stop points e UI de checkpoint na pausa automática (feito).
+- Feedback imediato e ajuste de WPM (feito via self-score).
+- Geração LLM — **deferida**; templates + self-score provam o loop.
 
-### Próximo na v3
-
-- Feedback imediato acerto/erro.
-- Ajuste automático de WPM após baixa compreensão.
-- Geração LLM real quando `PHRASEFRAME_LLM_API_KEY` estiver configurada.
-
-### Critério de sucesso
+### Critério de sucesso (referência)
 
 Ao ler um capítulo, o usuário responde perguntas e o app identifica trechos mal compreendidos.
 
 ---
 
-## v4 — Resumos, lacunas e flashcards
+## v4 — Resumos, lacunas e flashcards (entregue localmente) 🔄
+
+**Status:** fluxo local construído — Recall Moment, resumo extractivo, lacunas, até 4 flashcards
+imediatos por checkpoint fraco, SM-2, dashboard mínimo, tela **Review** cross-documento e retorno
+ao frame de origem. O resumo gerativo e o dashboard longitudinal completo continuam pendentes.
 
 **Objetivo:** transformar falhas de compreensão em material de revisão.
 
@@ -151,7 +143,7 @@ Ao ler um capítulo, o usuário responde perguntas e o app identifica trechos ma
 
 O app gera:
 
-1. **Resumo do trecho** — 3–5 frases do que foi lido.
+1. **Recap extractivo do trecho** — até ~3 frases do que foi lido (não 3–5 garantidas; não generativo).
 2. **Mapa de lacunas** — o que não ficou claro e por quê.
 3. **Flashcards** — pergunta/resposta para revisão espaçada.
 
@@ -167,14 +159,17 @@ Dashboard pessoal com:
 
 ### Entregáveis técnicos
 
-- `review/` service: resumos, flashcards, fila de revisão.
-- Modelo de dados: `ComprehensionResult`, `Flashcard`, `ReadingSession`.
-- Tela “Revisar” separada da tela “Ler”.
-- Algoritmo simples de repetição espaçada (SM-2 ou similar).
+- Serviço `review`: resumo extractivo, até 4 flashcards e fila cross-documento.
+- Dashboard mínimo: pendências, compreensão média, paradas fracas e última leitura.
+- Tela “Review” separada da tela “Read”.
+- Agendamento de repetição espaçada SM-2.
+- Primeira revisão imediata; grades seguintes seguem o intervalo SM-2.
+- Card ligado ao checkpoint e ao frame de origem, com **Return to passage**.
 
 ### Critério de sucesso
 
-Usuário termina um capítulo difícil, recebe 5 flashcards, revisa no dia seguinte e melhora a compreensão no próximo checkpoint.
+Usuário identifica uma lacuna, revisa o primeiro card imediatamente e volta ao trecho de origem.
+As revisões seguintes usam o agendamento SM-2.
 
 ---
 
@@ -224,8 +219,8 @@ flowchart TD
 |---|---|---|
 | v1 | Provar leitura phrase-RSVP | ✅ Concluída |
 | v2 | PDF + persistência | ✅ Concluída |
-| v3 | Compreensão ativa | 🔄 Em andamento |
-| v4 | Revisão e retenção | Média |
+| v3 | Compreensão ativa | ✅ Concluída localmente |
+| v4 | Revisão e retenção | 🔄 Fluxo principal construído localmente |
 | v5 | Produto comercial | Média |
 
 ---
@@ -281,17 +276,33 @@ Medir **retenção e compreensão**, não só velocidade:
 1. Upload do PDF local do usuário.
 2. Seleção de capítulo (ex.: “What is philosophy?”).
 3. Leitura a 280 WPM com frases de 4 palavras.
-4. Stop point a cada 800 palavras → 3 perguntas.
-5. Erros geram resumo + 4 flashcards.
-6. Usuário revisa flashcards no dia seguinte.
-7. Retoma do ponto exato no capítulo seguinte.
+4. Stop point configurável; usar 200 palavras na demo → 2–5 perguntas.
+5. Erros geram resumo extractivo + até 4 flashcards.
+6. Usuário faz a primeira revisão imediatamente; Got it / Again agenda as próximas.
+7. Return to passage abre o frame fraco; Continue retoma o ponto salvo.
+
+---
+
+## Roteiro de demonstração para investidor (5 minutos)
+
+1. Abrir `/?demo=1`, criar conta e subir um TXT curto ou PDF autorizado.
+2. Manter o stop point padrão de **200 palavras**, preparar e iniciar a leitura.
+3. Acionar **Check**, responder de memória e submeter uma vez.
+4. Mostrar o **Recall Moment** persistente: score, limiar honesto de 67%, resumo extractivo,
+   lacunas, quantidade de cards e marcador fraco.
+5. Selecionar **Review now**, revelar, usar **Got it** ou **Again** e então **Return to passage**.
+6. Encerrar no pulso da biblioteca: revisões devidas, recall médio, weak stops e última leitura.
+
+As perguntas são templates, a confiança é autoavaliada e o resumo é extractivo. A demo não deve
+ser descrita como “compreensão por IA” nem como leitura rápida sem custo cognitivo.
 
 ---
 
 ## Próxima ação imediata
 
-1. Deploy v2/v3 no Render Starter com disco persistente (`PHRASEFRAME_DATA_DIR=/data`).
-2. Teste norte: upload PDF → ler → checkpoint → fechar → **Continue** no dia seguinte.
-3. v4: resumos + flashcards a partir de respostas fracas nos checkpoints.
+1. Deploy v2/v3/v4 no Render Starter com disco persistente (`PHRASEFRAME_DATA_DIR=/data`) — **código pronto; E2E em produção pendente**.
+2. O roteiro local completo foi validado em 2026-07-16, incluindo 390 px e console sem erros da aplicação.
+3. Repetir no Render Starter: upload → checkpoint → Review → Return to passage → fechar → **Continue** no dia seguinte.
+4. Executar o plano de UX/appeal (Phase Now): [UX_APPEAL_PLAN.md](UX_APPEAL_PLAN.md) + copy em [AI_UI_COPY_PACK.md](AI_UI_COPY_PACK.md) + claims em [AI_CLAIM_MATRIX.md](AI_CLAIM_MATRIX.md).
 
-Ver também: [V1.md](V1.md) · [HOSTING.md](HOSTING.md) · [ROADMAP.md](ROADMAP.md) · [SCIENCE.md](SCIENCE.md)
+Ver também: [V1.md](V1.md) · [HOSTING.md](HOSTING.md) · [ROADMAP.md](ROADMAP.md) · [SCIENCE.md](SCIENCE.md) · [AI_BRIEF_UX_APPEAL.md](AI_BRIEF_UX_APPEAL.md)

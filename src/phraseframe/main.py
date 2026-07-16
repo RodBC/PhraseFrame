@@ -1,5 +1,6 @@
 """PhraseFrame ASGI application."""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,8 +13,19 @@ from phraseframe.db.store import LibraryStore
 from phraseframe.web.routes import router
 
 
+def _validate_production_env() -> None:
+    data_dir = os.environ.get("PHRASEFRAME_DATA_DIR", "data")
+    is_production = data_dir.startswith("/data") or bool(os.environ.get("PORT"))
+    secret = os.environ.get("PHRASEFRAME_SECRET_KEY", "")
+    if is_production and not secret:
+        raise RuntimeError(
+            "PHRASEFRAME_SECRET_KEY must be set when running outside local development."
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    _validate_production_env()
     store = LibraryStore.from_env()
     store.init_schema()
     app.state.store = store

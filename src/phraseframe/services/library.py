@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 
 from phraseframe.adapters.documents import DocumentExtractionService
 from phraseframe.core.models import ExtractedDocument
-from phraseframe.db.store import LibraryEntry, LibraryStore, ReadingProgress, StoredDocument
+from phraseframe.db.store import LibraryEntry, LibraryStore, ReadingProgress
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +58,7 @@ class LibraryService:
             document.source_format,
             content,
         )
+        self._write_cache(store, user_id, stored.id, document)
         return UploadResult(
             document_id=stored.id,
             title=document.title,
@@ -72,17 +73,17 @@ class LibraryService:
         document_id: str,
     ) -> ResumeResult:
         stored = store.get_document(user_id, document_id)
-        content = store.read_document_bytes(user_id, document_id)
-        document = self.extract(content, stored.filename)
         progress = store.get_progress(user_id, document_id)
         chapter_index = progress.chapter_index if progress else 0
+        chapters, chapter_meta = self._load_chapters(store, user_id, document_id, stored.filename)
+        self._validate_chapter_index(chapter_index, len(chapters))
         return ResumeResult(
             document_id=stored.id,
-            title=document.title,
-            format=document.source_format,
-            chapters=_chapter_meta(document),
+            title=stored.title,
+            format=stored.source_format,
+            chapters=chapter_meta,
             chapter_index=chapter_index,
-            text=document.text_for_chapter(chapter_index),
+            text=chapters[chapter_index],
             progress=progress,
         )
 
@@ -94,21 +95,9 @@ class LibraryService:
         chapter_index: int,
     ) -> str:
         stored = store.get_document(user_id, document_id)
-        content = store.read_document_bytes(user_id, document_id)
-        document = self.extract(content, stored.filename)
-        return document.text_for_chapter(chapter_index)
-
-    def document_meta(
-        self,
-        store: LibraryStore,
-        user_id: int,
-        document_id: str,
-    ) -> tuple[StoredDocument, ExtractedDocument, ReadingProgress | None]:
-        stored = store.get_document(user_id, document_id)
-        content = store.read_document_bytes(user_id, document_id)
-        document = self.extract(content, stored.filename)
-        progress = store.get_progress(user_id, document_id)
-        return stored, document, progress
+        chapters, _ = self._load_chapters(store, user_id, document_id, stored.filename)
+        self._validate_chapter_index(chapter_index, len(chapters))
+        return chapters[chapter_index]
 
     def save_progress(
         self,
@@ -120,6 +109,7 @@ class LibraryService:
         frame_index: int,
         wpm: int,
         target_words: int,
+        stop_every_words: int | None = None,
     ) -> ReadingProgress:
         return store.save_progress(
             user_id,
@@ -128,10 +118,60 @@ class LibraryService:
             frame_index=frame_index,
             wpm=wpm,
             target_words=target_words,
+            stop_every_words=stop_every_words,
         )
 
     def list_library(self, store: LibraryStore, user_id: int) -> list[LibraryEntry]:
         return store.list_documents_with_progress(user_id)
+
+    def _load_chapters(
+        self,
+        store: LibraryStore,
+        user_id: int,
+        document_id: str,
+        filename: str,
+    ) -> tuple[list[str], tuple[ChapterMeta, ...]]:
+        cached_meta = store.read_chapters_meta(user_id, document_id)
+        if cached_meta is not None:
+            texts = []
+            for index in range(len(cached_meta)):
+                text = store.read_chapter_text(user_id, document_id, index)
+                if text is None:
+                    break
+                texts.append(text)
+            if len(texts) == len(cached_meta):
+                chapter_meta = tuple(
+                    ChapterMeta(
+                        index=int(str(item["index"])),
+                        title=str(item["title"]),
+                        page_start=int(str(item["page_start"])),
+                        page_end=int(str(item["page_end"])),
+                    )
+                    for item in cached_meta
+                )
+                return texts, chapter_meta
+
+        content = store.read_document_bytes(user_id, document_id)
+        document = self.extract(content, filename)
+        self._write_cache(store, user_id, document_id, document)
+        texts = [document.text_for_chapter(index) for index in range(len(document.chapters))]
+        return texts, _chapter_meta(document)
+
+    def _write_cache(
+        self,
+        store: LibraryStore,
+        user_id: int,
+        document_id: str,
+        document: ExtractedDocument,
+    ) -> None:
+        meta = chapter_list_payload(document)
+        texts = [document.text_for_chapter(index) for index in range(len(document.chapters))]
+        store.write_chapters_cache(user_id, document_id, meta, texts)
+
+    @staticmethod
+    def _validate_chapter_index(chapter_index: int, chapter_count: int) -> None:
+        if chapter_index < 0 or chapter_index >= chapter_count:
+            raise ValueError("Chapter index is out of range.")
 
 
 def _chapter_meta(document: ExtractedDocument) -> tuple[ChapterMeta, ...]:
@@ -174,6 +214,7 @@ def metadata_payload(
             "frame_index": progress.frame_index,
             "wpm": progress.wpm,
             "target_words": progress.target_words,
+            "stop_every_words": progress.stop_every_words,
             "updated_at": progress.updated_at,
         }
     return payload

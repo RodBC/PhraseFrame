@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Phrase-paced reading with honest, comprehension-first controls.">
-  <title>PhraseFrame — Find your reading cadence</title>
+  <meta name="description" content="Phrase-paced reading with recall checks, gap summaries, and spaced flashcards—built for understanding that lasts.">
+  <title>PhraseFrame — Focus, check, remember</title>
   <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
   <script type="module" src="{{ url_for('static', path='/app.js') }}"></script>
 </head>
@@ -31,14 +31,56 @@
   </header>
 
   <main>
-    <section class="hero">
-      <p class="eyebrow">READ AT THE SPEED OF ATTENTION</p>
-      <h1>Find your reading cadence.</h1>
-      <p>Short, meaningful phrases arrive at one focal point. You control the pace—and can always go back.</p>
+    <section class="hero" id="hero">
+      <p class="eyebrow">FOCUS → CHECK → KEEP</p>
+      <h1>Read with focus. Check what stuck. Keep it.</h1>
+      <p>One focal point. Meaning-sized phrases at your pace. Honest recall checks.
+        When a stretch slips, you get a short recap, a gap list, and flashcards on a schedule—
+        without pretending speed removes the work of understanding.</p>
+      <p class="hero-proof">In classic studies, recall practice left <strong>61%</strong> of idea units a week later vs <strong>40%</strong> after rereading—the same time spent differently. <span class="proof-tag">Lab study · Roediger &amp; Karpicke 2006</span></p>
+      <div class="hero-actions">
+        <button id="hero-start-loop" class="primary-button" type="button">Start a 5-minute loop</button>
+        <a id="hero-see-evidence" class="secondary-button hero-link" href="#science">See the evidence</a>
+      </div>
     </section>
 
-    <section class="workspace" aria-label="PhraseFrame reader">
-      <aside class="source-panel">
+    <aside id="demo-guide" class="demo-guide" aria-labelledby="demo-guide-title" hidden>
+      <div>
+        <strong id="demo-guide-title">Your first five-minute loop</strong>
+        <p>1) Prepare a short text · 2) Read to a checkpoint · 3) Answer from memory · 4) Open gaps + cards · 5) Review once · 6) Return to the weak stretch. That’s the whole product—focus, proof, repair, keep.</p>
+      </div>
+      <button id="demo-guide-dismiss" type="button">Let’s go</button>
+    </aside>
+
+    <nav id="view-tabs" class="view-tabs" aria-label="Workspace views" role="tablist" hidden>
+      <button id="read-tab" class="view-tab active" type="button" role="tab" aria-controls="reader-view" aria-selected="true">Read</button>
+      <button id="review-tab" class="view-tab" type="button" role="tab" aria-controls="review-view" aria-selected="false" tabindex="-1">Review <span id="review-tab-count" class="tab-count" hidden></span></button>
+    </nav>
+
+    <nav id="attention-loop" class="attention-loop" aria-label="Attention Loop" hidden>
+      <span>Attention Loop</span>
+      <ol>
+        <li data-stage="read" title="One focal point; phrases come to you">Read</li>
+        <li data-stage="check" title="Answer from memory—retrieval builds retention">Check</li>
+        <li data-stage="gaps" title="Recap + what didn’t stick">Gaps</li>
+        <li data-stage="cards" title="Misses become practice">Cards</li>
+        <li data-stage="review" title="Spaced schedule so memory survives the week">Review</li>
+      </ol>
+      <p id="attention-loop-complete" class="attention-loop-complete" hidden>Loop closed. Due cards will call you back.</p>
+    </nav>
+
+    <aside id="continue-banner" class="continue-banner" aria-labelledby="continue-title" hidden>
+      <div>
+        <strong id="continue-title">Continue reading</strong>
+        <span id="continue-document-title"></span>
+      </div>
+      <button id="continue-document-button" type="button">Continue</button>
+    </aside>
+
+    <section id="reader-view" class="workspace app-view reader-ready" role="tabpanel" aria-labelledby="read-tab">
+      <aside class="source-panel" id="source-panel">
+        <button id="source-panel-toggle" class="source-panel-toggle" type="button" aria-expanded="true" aria-controls="source-panel-body">Source</button>
+        <div id="source-panel-body" class="source-panel-body">
         <div class="section-heading">
           <div>
             <span class="step">01</span>
@@ -59,14 +101,44 @@
             <strong>Your library</strong>
             <button id="refresh-library-button" type="button">Refresh</button>
           </div>
+          <dl id="library-stats" class="library-stats" aria-label="Library summary">
+            <div>
+              <dt title="Cards waiting—spaced practice beats cramming for the same study time">Due reviews</dt>
+              <dd id="library-pending-reviews">—</dd>
+            </div>
+            <div>
+              <dt title="Target ≥70% at your pace (Deep Pace idea)">Avg. self-check</dt>
+              <dd id="library-average-comprehension">—</dd>
+            </div>
+            <div>
+              <dt id="library-deep-pace-label" title="Highest pace with rolling self-check ≥70%">Deep Pace</dt>
+              <dd id="library-deep-pace">—</dd>
+            </div>
+            <div>
+              <dt title="Stops below 67%—jump back and repair">Weak stops</dt>
+              <dd id="library-weak-stops">—</dd>
+            </div>
+            <div>
+              <dt title="Continuity: tomorrow continues today">Last read</dt>
+              <dd id="library-last-read">—</dd>
+            </div>
+          </dl>
           <ul id="library-list"></ul>
         </div>
+        <div id="weak-stops-panel" class="weak-stops-panel" hidden>
+          <div class="weak-stops-heading">
+            <strong>Weak stops</strong>
+          </div>
+          <ul id="weak-stops-list"></ul>
+        </div>
         <label for="source-text">Paste or edit your text</label>
-        <textarea id="source-text" spellcheck="true">Attention is a limited resource. A crowded page asks your eyes to choose where to land, while PhraseFrame offers one short idea at a time.
+        <textarea id="source-text" spellcheck="true">Attention is limited. A crowded page asks your eyes to choose; PhraseFrame offers one short idea at a time.
 
-This does not make comprehension limitless. Difficult arguments still need thought, pauses, and sometimes a second look. That is why this reader lets you move backward, slow down, and tune the phrase size.
+Read a few phrases. When a recall check appears, answer from memory—even if you feel unsure.
+A weak stop is useful: you’ll see what the stretch said, what slipped, and cards to practice later.
 
-Begin at a comfortable pace. Notice whether each phrase connects naturally to the next. If meaning starts to blur, lower the speed. The best pace is not the largest number; it is the fastest pace at which you can still explain what you read.</textarea>
+The best pace is not the largest number. It is the fastest speed at which you can still explain what you read—
+often near everyday nonfiction rates, with honesty when you stretch past about 350 words per minute.</textarea>
         <div class="source-meta">
           <span id="word-count">0 words</span>
           <span id="duration-estimate">—</span>
@@ -79,8 +151,9 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
             <output id="wpm-output" for="wpm">300 WPM</output>
           </div>
           <input id="wpm" type="range" min="200" max="500" step="10" value="300">
-          <div class="range-scale"><span>Reflective</span><span>Fast</span></div>
+          <div class="range-scale"><span>~220 reflect</span><span>~300 deep</span><span>~350 stretch</span><span>400+ skim risk</span></div>
           <p id="speed-guidance" class="guidance">A balanced starting point for clear prose.</p>
+          <p id="timeline-stale-warning" class="timeline-stale-warning" role="status" hidden>Settings changed — prepare again to refresh timing.</p>
 
           <div class="setting-row">
             <label for="chunk-size">Phrase size</label>
@@ -96,15 +169,16 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
           </label>
           <label class="check-row">
             <input id="stop-checkpoints" type="checkbox" checked>
-            Pause for comprehension checkpoints
+            Pause for recall checks (recommended)
           </label>
           <div class="setting-row">
-            <label for="stop-every-words">Checkpoint every</label>
-            <input id="stop-every-words" type="number" min="50" max="5000" step="50" value="800">
+            <label for="stop-every-words">Check every</label>
+            <input id="stop-every-words" type="number" min="50" max="5000" step="50" value="200">
             <span>words</span>
           </div>
-          <button id="prepare-button" class="primary-button" type="button">Prepare reader</button>
+          <button id="prepare-button" class="primary-button" type="button">Prepare focus reader</button>
           <button id="resume-button" class="secondary-button" type="button" hidden>Continue where I left off</button>
+        </div>
         </div>
       </aside>
 
@@ -120,7 +194,8 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
         <div id="reader-stage" class="reader-stage" tabindex="0" aria-label="Phrase reader">
           <div class="focus-guides" aria-hidden="true"></div>
           <div class="phrase-shell">
-            <p id="phrase" aria-live="polite">Prepare the reader to begin</p>
+            <p id="phrase" aria-live="polite">Prepare the reader—then keep your eyes here</p>
+            <p class="focus-hint">Eyes stay here. Phrases come to you.</p>
           </div>
           <div class="stage-footer">
             <span id="frame-counter">0 / 0</span>
@@ -128,15 +203,17 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
           </div>
         </div>
 
-        <div class="progress-track" aria-label="Reading progress">
+        <div id="progress-track" class="progress-track" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div id="progress-bar"></div>
+          <div id="weak-frame-markers" class="weak-frame-markers" aria-label="Weak checkpoint positions"></div>
         </div>
-        <div class="transport">
+        <div class="transport transport-primary">
           <button id="restart-button" type="button" aria-label="Restart">↺</button>
           <button id="previous-button" type="button" aria-label="Previous phrase">←</button>
-          <button id="play-button" class="play-button" type="button" aria-label="Play or pause">▶</button>
+          <button id="play-button" class="play-button" type="button" aria-label="Play" aria-pressed="false">▶</button>
           <button id="next-button" type="button" aria-label="Next phrase">→</button>
-          <button id="export-button" type="button" aria-label="Export MP4">MP4</button>
+          <button id="manual-checkpoint-button" class="check-transport" type="button" title="Pause for a recall check" aria-label="Pause for a recall check">⏸ Check</button>
+          <button id="export-button" class="export-transport" type="button" aria-label="Export MP4">MP4</button>
         </div>
         <p class="shortcut-note"><kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> move by phrase</p>
         <p id="export-status" class="status" role="status"></p>
@@ -152,32 +229,95 @@ Begin at a comfortable pace. Notice whether each phrase connects naturally to th
         </div>
 
         <div id="checkpoint" class="checkpoint" hidden>
-          <strong>Comprehension checkpoint</strong>
-          <p>Answer briefly from memory before continuing.</p>
+          <strong>Recall check</strong>
+          <p>Answer briefly from memory before continuing. Checking is how memory is built—not only how it’s measured.</p>
+          <p id="checkpoint-guest-hint" class="checkpoint-guest-hint" hidden>Guest preview — sign in to save cards, history, and resume.</p>
           <div id="checkpoint-questions"></div>
-          <button id="checkpoint-continue" type="button">Continue reading</button>
+          <p id="checkpoint-feedback" class="checkpoint-feedback" role="status" hidden></p>
+          <section id="checkpoint-recall" class="checkpoint-recall" aria-labelledby="checkpoint-recall-title" hidden>
+            <span id="checkpoint-recall-title">Recall Moment</span>
+            <strong id="checkpoint-recall-score"></strong>
+            <p id="checkpoint-recall-verdict"></p>
+            <p id="checkpoint-recall-threshold">Below 67% we mark this stop as weak and prepare a repair path. This is a product rule, not a clinical cutoff.</p>
+            <p id="checkpoint-cards-created" hidden></p>
+          </section>
+          <section id="checkpoint-summary" class="checkpoint-result" aria-labelledby="checkpoint-summary-title" hidden>
+            <h3 id="checkpoint-summary-title">Extractive recap</h3>
+            <p class="checkpoint-helper">Short extractive recap—not a substitute for reading; repairs context after attempted recall.</p>
+            <p id="checkpoint-summary-text"></p>
+          </section>
+          <section id="checkpoint-gaps" class="checkpoint-result" aria-labelledby="checkpoint-gaps-title" hidden>
+            <h3 id="checkpoint-gaps-title">What didn’t stick</h3>
+            <ul id="checkpoint-gaps-list"></ul>
+            <p class="checkpoint-helper">Gaps are the shortest path to durable memory—not a report card.</p>
+          </section>
+          <div id="checkpoint-actions" class="checkpoint-actions" hidden></div>
+          <button id="checkpoint-continue" type="button">Submit answers</button>
         </div>
       </section>
     </section>
 
-    <section class="science">
+    <section id="review-view" class="review-view app-view" role="tabpanel" aria-labelledby="review-tab review-view-title" hidden>
+      <div class="review-view-heading">
+        <div>
+          <p class="eyebrow">SPACED REVIEW · HIGH-UTILITY PRACTICE</p>
+          <h2 id="review-view-title">Review</h2>
+          <p>Due cards from every book in your library. Practice testing and spaced practice are the two techniques psychologists rate highest for durable learning—this screen is both.</p>
+        </div>
+        <button id="refresh-review-button" type="button">Refresh queue</button>
+      </div>
+      <div id="review-panel" class="review-panel">
+        <p id="review-status" class="review-status" role="status" aria-live="polite">Sign in to load your review queue and protect what you checked.</p>
+        <p id="review-session-summary" class="review-session-summary" hidden></p>
+        <div id="review-card" class="review-card-flip" hidden>
+          <p id="review-document-title" class="review-document-title"></p>
+          <p id="review-source-location" class="review-source-location"></p>
+          <p id="review-front" class="review-front"></p>
+          <p id="review-back" class="review-back" hidden></p>
+          <div id="review-actions" class="review-actions"></div>
+        </div>
+        <ul id="review-list" hidden></ul>
+      </div>
+    </section>
+
+    <section class="science" id="science">
       <div>
         <p class="eyebrow">THE EVIDENCE, WITHOUT THE HYPE</p>
-        <h2>Speed is useful only when meaning survives.</h2>
+        <h2>Understanding compounds when focus, checking, and spacing work together.</h2>
       </div>
       <div class="science-grid">
-        <article><span>01</span><h3>One focal point</h3><p>Phrase-RSVP reduces scanning and can make small displays feel calmer.</p></article>
-        <article><span>02</span><h3>Meaningful chunks</h3><p>Structured, short idea units outperform arbitrary segments in classic RSVP research.</p></article>
-        <article><span>03</span><h3>Your pace matters</h3><p>Studies commonly find a comprehension trade-off above roughly 350 WPM.</p></article>
+        <article><span>01</span><h3>Focus</h3><p>Phrase-RSVP reduces scanning so attention stays on meaning—not on hunting the next line.</p></article>
+        <article><span>02</span><h3>Pace</h3><p>Deep work often lives near 250–350 WPM. Adults average ~238 WPM on nonfiction; we warn you as you stretch past ~350.</p></article>
+        <article><span>03</span><h3>Check</h3><p>Brief tests during learning cut mind-wandering probes roughly in half in landmark lecture research (~19% vs ~40%)—transfer to reading is plausible, not guaranteed.</p></article>
+        <article><span>04</span><h3>Repair</h3><p>When a stop is weak, you get a short extractive recap and a gap list—so repair is specific, not a blind reread.</p></article>
+        <article><span>05</span><h3>Keep</h3><p>Recall practice beat rereading at one week in classic studies (61% vs 40% idea units). Spaced review can add large gains vs cramming for the same study time.</p></article>
       </div>
       <details>
         <summary>What the research actually says</summary>
-        <p>RSVP removes natural eye movements, including previewing upcoming words and rereading confusing material. It can be useful for focus and controlled pacing, but it is not a shortcut around comprehension. For demanding texts, pause, step back, and use a lower pace.</p>
-        <p><a href="https://doi.org/10.1177/1529100615623267" target="_blank" rel="noreferrer">Rayner et al. (2016)</a> · <a href="https://doi.org/10.1177/0956797614531794" target="_blank" rel="noreferrer">Schotter et al. (2014)</a> · <a href="https://doi.org/10.3758/BF03198304" target="_blank" rel="noreferrer">Juola et al. (1995)</a></p>
+        <p>RSVP can calm the eyes and enforce a pace, but it does not delete the time language needs. Regressions, pauses, and slower speeds remain tools—not failures.</p>
+        <p>What we lean on instead of speed myths:</p>
+        <ul class="science-evidence-list">
+          <li>Practice testing and distributed practice — high utility (Dunlosky et al., 2013)</li>
+          <li>Testing vs rereading — 61% vs 40% idea-unit recall at 1 week (Roediger &amp; Karpicke, 2006)</li>
+          <li>Interpolated tests — mind-wandering ~19% vs ~40% of probes in online lectures (Szpunar et al., 2013)</li>
+          <li>RSVP comprehension — often similar to page reading at 250–350 WPM; weaker at 400–450 (Ricciardi, 2018)</li>
+        </ul>
+        <p>We do not promise 2–3× speed with full comprehension, silent “subvocalization hacks,” or medical treatment of attention disorders. PhraseFrame has no controlled outcome study—literature numbers are tagged separately from your in-app self-check scores.</p>
+        <p>
+          <a href="https://doi.org/10.1177/1529100615623267" target="_blank" rel="noreferrer">Rayner et al. (2016)</a> ·
+          <a href="https://doi.org/10.1177/0956797614531794" target="_blank" rel="noreferrer">Schotter et al. (2014)</a> ·
+          <a href="https://doi.org/10.3758/BF03198304" target="_blank" rel="noreferrer">Juola et al. (1995)</a> ·
+          <a href="https://doi.org/10.1111/j.1467-9280.2006.01693.x" target="_blank" rel="noreferrer">Roediger &amp; Karpicke (2006)</a> ·
+          <a href="https://doi.org/10.1111/j.1467-9280.2008.02209.x" target="_blank" rel="noreferrer">Cepeda et al. (2008)</a> ·
+          <a href="https://doi.org/10.1073/pnas.1221764110" target="_blank" rel="noreferrer">Szpunar et al. (2013)</a> ·
+          <a href="https://doi.org/10.1177/1529100612453266" target="_blank" rel="noreferrer">Dunlosky et al. (2013)</a> ·
+          <a href="https://doi.org/10.1504/IJHFE.2018.096118" target="_blank" rel="noreferrer">Ricciardi (2018)</a> ·
+          <a href="https://doi.org/10.1016/j.jml.2019.104047" target="_blank" rel="noreferrer">Brysbaert (2019)</a>
+        </p>
       </details>
     </section>
   </main>
 
-  <footer>PhraseFrame POC · comprehension before speed</footer>
+  <footer>PhraseFrame · focus → check → keep · comprehension before speed</footer>
 </body>
 </html>

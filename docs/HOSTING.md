@@ -1,5 +1,8 @@
 # Hosting PhraseFrame v2+
 
+> **Status:** the complete investor loop is built and tested locally. No successful Render
+> Starter E2E has been recorded yet, so production proof remains pending.
+
 ## Production requirements
 
 v2 (PDF library, accounts, resume) and v3 (checkpoints) need **persistent storage**.
@@ -23,8 +26,9 @@ Use **Render Starter** (or equivalent) with a mounted volume.
 |---|---|---|
 | `PHRASEFRAME_DATA_DIR` | Yes | `/data` — SQLite DB + uploaded PDFs |
 | `PHRASEFRAME_SECRET_KEY` | Yes | JWT signing (long random string) |
-| `PHRASEFRAME_LLM_API_KEY` | No | Optional LLM for checkpoint questions |
 | `PORT` | Auto | Set by Render |
+
+Checkpoint questions use **template generation only** — no LLM API key is required.
 
 ### Disk mount
 
@@ -33,17 +37,41 @@ Use **Render Starter** (or equivalent) with a mounted volume.
 3. Set `PHRASEFRAME_DATA_DIR=/data`.
 4. Redeploy.
 
-The `Dockerfile` declares `VOLUME ["/data"]` and creates `/data/documents` with correct permissions.
+The `Dockerfile` declares `VOLUME ["/data"]`, creates `/data/documents` with correct permissions,
+and checks `GET /health` on Render's `$PORT`.
 
 ## How to redeploy
 
 1. Push changes to `main`.
 2. Render auto-deploys from the linked repository.
-3. Verify:
-   - Page load and sign-in
-   - PDF upload (metadata-only response should be fast)
-   - Read 20+ frames, refresh, **Continue** restores position
-   - Checkpoint pause when `stop_every_words` is enabled
+3. Run the north-star E2E checklist:
+
+| Step | Action | Expected |
+|---|---|---|
+| 1 | Sign in, upload 100+ page PDF | Fast metadata response; chapters listed |
+| 2 | Read 20+ frames, refresh, click **Continue** | Same chapter, frame, WPM, phrase size |
+| 3 | Keep checkpoints at the 200-word demo default, pause, answer | First submit leaves the Recall Moment visible with score, summary, gaps, cards count, and explicit resume |
+| 4 | Close browser, reopen next day, **Continue** | Full session restored including checkpoint settings |
+| 5 | Weak checkpoint → **Review now** | Up to 4 immediately due cards; dashboard updates; card generation is idempotent |
+| 6 | Reveal and grade a card, then **Return to passage** | SM-2 schedules the next review; reader opens the source document at the weak frame |
+
+Also verify:
+
+- Page load and sign-in
+- PDF upload (metadata-only response should be fast)
+- Resume uses cached chapter files (no re-parse on every read)
+- `GET /health` returns `{"status":"ok"}`
+- Attention Loop stage follows Read, Check, Gaps/Cards, and Review
+- Recall Moment stays visible until **Continue reading** is selected
+- Narrow mobile layout has no horizontal overflow
+- Browser console has no uncaught errors
+
+## Local verification record
+
+| Environment | Automated checks | Browser investor loop | Status |
+|---|---|---|---|
+| Local (2026-07-16) | Ruff, formatting, mypy, 59 pytest tests at 87.75% coverage, JS syntax | Account → TXT preparation → checkpoint → persistent Recall Moment → weak markers → immediate queue → Got it / Again → source frame; 390 px layout; no app console errors | Proven |
+| Render Starter | Same deployed revision | Full checklist above with persistent `/data` | Not yet proven |
 
 ## Privacy and production boundary
 
