@@ -138,6 +138,22 @@ def _extract_upload(content: bytes, filename: str) -> ExtractedDocument:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 
+async def _read_upload(file: UploadFile) -> tuple[bytes, str]:
+    content = await file.read(extractor.max_bytes + 1)
+    filename = file.filename or "upload.txt"
+    if len(content) > extractor.max_bytes:
+        max_mb = extractor.max_bytes // 1_000_000
+        raise HTTPException(status_code=422, detail=f"Files must be smaller than {max_mb} MB.")
+    return content, filename
+
+
+def _storage_error() -> HTTPException:
+    return HTTPException(
+        status_code=507,
+        detail="Server storage is unavailable. Confirm the Render disk is mounted at /data.",
+    )
+
+
 def _reading_settings_from_progress(
     store: LibraryStore,
     user_id: int,
@@ -173,8 +189,11 @@ async def extract_text(
     file: Annotated[UploadFile, File()],
     chapter_index: int = 0,
 ) -> dict[str, object]:
-    content = await file.read(extractor.max_bytes + 1)
-    document = _extract_upload(content, file.filename or "upload.txt")
+    content, filename = await _read_upload(file)
+    try:
+        document = await run_in_threadpool(extractor.extract, content, filename)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     if chapter_index < 0 or chapter_index >= len(document.chapters):
         raise HTTPException(status_code=422, detail="Chapter index is out of range.")
     return metadata_payload(
@@ -339,18 +358,20 @@ async def upload_document(
     user: Annotated[User, Depends(get_current_user)],
     store: Annotated[LibraryStore, Depends(get_store)],
 ) -> dict[str, object]:
-    content = await file.read(extractor.max_bytes + 1)
-    filename = file.filename or "upload.txt"
+    content, filename = await _read_upload(file)
     try:
-        result = library.upload(store, user.id, content, filename)
+        result = await run_in_threadpool(library.upload, store, user.id, content, filename)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except OSError as error:
+        raise _storage_error() from error
     return {
         "document_id": result.document_id,
         "title": result.title,
         "format": result.format,
         "chapter_index": 0,
         "chapters": [asdict(chapter) for chapter in result.chapters],
+        "text": result.text,
     }
 
 

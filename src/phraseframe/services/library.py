@@ -21,6 +21,7 @@ class UploadResult:
     title: str
     format: str
     chapters: tuple[ChapterMeta, ...]
+    text: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +65,7 @@ class LibraryService:
             title=document.title,
             format=document.source_format,
             chapters=_chapter_meta(document),
+            text=document.text_for_chapter(0),
         )
 
     def resume(

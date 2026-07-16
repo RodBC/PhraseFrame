@@ -896,7 +896,9 @@ async function uploadDocument() {
       if (!response.ok) throw new Error(await apiError(response));
       const payload = await response.json();
       applyMetadataPayload(payload);
-      await loadChapter(payload.chapter_index ?? 0);
+      if (!payload.text) {
+        await loadChapter(payload.chapter_index ?? 0);
+      }
       await refreshLibrary();
       await refreshWeakStops();
     } else {
@@ -937,6 +939,10 @@ async function refreshLibrary() {
   }
   const response = await fetch("/api/documents", { headers: authHeaders() });
   if (!response.ok) {
+    if (response.status === 401) {
+      signOut();
+      showAuthError("Session expired on this server. Sign in again, then upload.");
+    }
     elements.libraryPanel.hidden = true;
     elements.continueBanner.hidden = true;
     state.libraryHasDocuments = false;

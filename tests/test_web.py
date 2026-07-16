@@ -167,6 +167,7 @@ def test_auth_documents_resume_and_chapter_flow(tmp_path: Path, monkeypatch: Mon
         summary = test_client.get("/api/library/summary", headers=headers)
 
     assert uploaded.status_code == 200
+    assert "Chapter One" in uploaded.json()["text"]
     assert chapter.status_code == 200
     assert "Each section can be selected" in chapter.json()["text"]
     assert saved.status_code == 200

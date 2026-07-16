@@ -28,6 +28,8 @@ Use **Render Starter** (or equivalent) with a mounted volume.
 | `PHRASEFRAME_SECRET_KEY` | Recommended | JWT signing. If omitted, the app writes `/data/.secret_key` on first boot. |
 | `PORT` | Auto | Set by Render |
 
+The Docker entrypoint re-chowns `/data` on each boot so the non-root app user can write to a Render-mounted disk.
+
 Checkpoint questions use **template generation only** — no LLM API key is required.
 
 ### Disk mount
