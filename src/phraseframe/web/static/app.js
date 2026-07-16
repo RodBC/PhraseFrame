@@ -1468,8 +1468,14 @@ elements.manualCheckpoint.addEventListener("click", () => {
 });
 elements.heroStartLoop?.addEventListener("click", () => {
   elements.demoGuide.hidden = false;
-  document.querySelector("#prepare-button")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  prepareReader().catch(() => {});
+  setView("read");
+  prepareReader()
+    .then(() => {
+      elements.stage?.scrollIntoView({ behavior: "smooth", block: "center" });
+    })
+    .catch(() => {
+      elements.stage?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
 });
 elements.sourcePanelToggle?.addEventListener("click", () => {
   const expanded = elements.sourcePanelToggle.getAttribute("aria-expanded") !== "false";
