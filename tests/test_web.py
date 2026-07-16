@@ -21,7 +21,7 @@ def test_reader_forces_and_fits_a_single_line() -> None:
         script = test_client.get("/static/app.js").text
     assert "phrase-shell" in page
     assert "overflow-x: clip" in styles
-    assert "minmax(0" in styles
+    assert "grid-template-columns: 1fr" in styles
     assert "fitPhraseOnOneLine" in script
     assert "phraseAvailableWidth" in script
 
